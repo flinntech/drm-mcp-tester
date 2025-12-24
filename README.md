@@ -49,6 +49,15 @@ npm run test:coverage
 - `tests/categories/`: Individual test files for each of the 13 categories.
 - `tests/setup/`: Configuration and MCP client wrapper.
 - `tests/integration/`: End-to-end workflows.
+- `tests/reports/`: Generated test reports and artifact storage.
+
+## Key Documentation
+
+| File | Purpose |
+|------|---------|
+| `MCP_SERVER_BUG_REPORT.md` | **Critical:** Tracks known bugs and deviations between spec and implementation. |
+| `AGENTS.md` | Context and guidelines for AI agents working in this repo. |
+| `drm-mcp-test-plan.md` | The original test specification and plan. |
 
 ## License
 
