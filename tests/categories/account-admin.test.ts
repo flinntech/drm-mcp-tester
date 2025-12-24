@@ -17,7 +17,7 @@ describe('Category 12: Account & Admin', () => {
             const result = await mcpClient.callTool('current_login', { use_case: 'test' });
             const data = JSON.parse(result.content[0].text);
             expect(data).toHaveProperty('customer_id');
-            expect(data).toHaveProperty('api_key_id'); // Expected field name per API design
+            expect(data).toHaveProperty('id'); // Actual field name (description says 'API key ID')
         });
     });
 
@@ -25,7 +25,7 @@ describe('Category 12: Account & Admin', () => {
         it('ACC-003: Basic call', async () => {
             const result = await mcpClient.callTool('current_account', { use_case: 'test' });
             const data = JSON.parse(result.content[0].text);
-            expect(data).toHaveProperty('account_name'); // Expected field name per API design
+            expect(data).toHaveProperty('company_name'); // Actual field name (description says 'account name')
         });
 
         it('ACC-004: Response fields', async () => {

@@ -203,8 +203,8 @@ describe('Category 2: Device Listing & Search', () => {
                 use_case: 'test'
             });
             const content = result.content[0].text;
-            // Should be empty list or specific message
-            expect(content).toMatch(/empty|no results|\[\]/i);
+            // CSV with header only (name,id\n) indicates no matches - LLMs can interpret this
+            expect(content).toMatch(/^name,id\s*$|empty|no results|\[\]/i);
         });
 
         it('DEV-022: Case insensitive', async () => {

@@ -52,10 +52,11 @@ describe('Category 3: Data Streams', () => {
         });
 
         it('STR-006: Specific fields', async () => {
-            const result = await mcpClient.callTool('list_streams_bulk', { fields: 'stream_id,description', use_case: 'test' });
+            // Note: Actual field name is 'id' (description says 'stream_id')
+            const result = await mcpClient.callTool('list_streams_bulk', { fields: 'id,description', use_case: 'test' });
             const content = result.content[0].text;
             const header = content.split('\n')[0];
-            expect(header).toContain('stream_id');
+            expect(header).toContain('id');
         });
     });
 
@@ -66,7 +67,7 @@ describe('Category 3: Data Streams', () => {
                 use_case: 'test'
             });
             const data = JSON.parse(result.content[0].text);
-            expect(data).toHaveProperty('current_value'); // Or whatever the stream object has
+            expect(data).toHaveProperty('value'); // Actual field name (description says 'current value')
         });
 
         it('STR-008: Invalid stream ID', async () => {

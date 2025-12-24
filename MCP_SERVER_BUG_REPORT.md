@@ -2,274 +2,190 @@
 
 Generated: 2024-12-24
 
-This report documents discrepancies between expected MCP server behavior (as specified in test cases) and actual server responses.
-
-## Summary
-
-| Category | Bug ID | Severity | Status |
-|----------|--------|----------|--------|
-| Account/Admin | BUG-001 | Medium | Open |
-| Account/Admin | BUG-002 | Medium | Open |
-| Account/Admin | BUG-003 | High | Open |
-| Query Syntax | BUG-004 | Medium | Open |
-| Devices | BUG-005 | Low | Open |
-| Streams | BUG-006 | Medium | Open |
+This report documents issues found during MCP server testing, organized by category.
 
 ---
 
-## BUG-001: `current_login` returns `id` instead of `api_key_id`
+## Summary
+
+### Documentation Issues (Tool descriptions don't match API response)
+| Bug ID | Tool | Issue |
+|--------|------|-------|
+| DOC-001 | `current_login` | Description says "API key ID", field is `id` |
+| DOC-002 | `current_account` | Description says "account name", field is `company_name` |
+| DOC-003 | `list_streams_bulk` | Docs imply `stream_id`, field is `id` |
+| DOC-004 | `get_stream` | Description says "current value", field is `value` |
+
+### Functional Bugs (Broken or incorrect behavior)
+| Bug ID | Severity | Tool | Issue |
+|--------|----------|------|-------|
+| FUNC-001 | **HIGH** | `list_events` | Python NameError - tool completely broken |
+| FUNC-002 | Low | `validate_query_syntax` | Accepts invalid `equals` operator |
+
+
+### Platform Issues (DRM backend, not just MCP)
+| Bug ID | Severity | Issue |
+|--------|----------|-------|
+| PLAT-001 | Medium | Cached data returned without indication for disconnected devices |
+
+---
+
+# Documentation Issues
+
+These are cases where the tool description doesn't match the actual API response field names.
+
+**Why this matters for LLMs:** LLMs read tool descriptions to understand what data to expect. When a description says "API key ID" but the actual field is `id`, the LLM may:
+- Fail to find the expected field in the response
+- Incorrectly map data to the wrong variables
+- Generate confusing or incorrect answers for users
+
+**Recommended fix:** Update tool descriptions to match actual field names.
+
+## DOC-001: `current_login` - "API key ID" vs `id`
 
 **Test:** ACC-002
-**Tool:** `current_login`
 
-### Expected Response
-```json
-{
-  "customer_id": 2899,
-  "api_key_id": "ff7091a384882b0269979f991274dedb",
-  "username": "jflinn",
-  ...
-}
-```
+**Tool Description says:**
+> Get the current user login information, including the customer ID, username, **API key ID** and description
 
-### Actual Response
+**Actual API response:**
 ```json
 {
   "id": "ff7091a384882b0269979f991274dedb",
   "customer_id": 2899,
   "username": "jflinn",
-  "description": "Claude Desktop",
-  "expires": "2026-12-24T13:52:34.797Z",
-  "created": "2025-12-24T13:52:34.927Z",
-  "last_used": "2025-12-24T15:46:40.447Z"
-}
-```
-
-### Issue
-The field containing the API key ID is named `id` instead of `api_key_id`. This is inconsistent with the tool description which references "API key ID".
-
-### Recommendation
-Either rename the field to `api_key_id` for clarity, or update the tool description to reflect that the field is named `id`.
-
----
-
-## BUG-002: `current_account` returns `company_name` instead of `account_name`
-
-**Test:** ACC-003
-**Tool:** `current_account`
-
-### Expected Response
-```json
-{
-  "customer_id": 2899,
-  "account_name": "Digi International Inc - BC Test Acct",
   ...
 }
 ```
 
-### Actual Response
+**Fix:** Update description to say "id" instead of "API key ID"
+
+---
+
+## DOC-002: `current_account` - "account name" vs `company_name`
+
+**Test:** ACC-003
+
+**Tool Description says:**
+> Get the current account including the customer ID and **account name**
+
+**Actual API response:**
 ```json
 {
   "customer_id": 2899,
   "company_name": "Digi International Inc - BC Test Acct",
-  "creation_date": "2012-12-22T14:23:43.380Z"
+  ...
 }
 ```
 
-### Issue
-The field is named `company_name` instead of `account_name`. The tool is called `current_account` but returns `company_name`.
-
-### Recommendation
-Rename the field to `account_name` for consistency with the tool name.
+**Fix:** Update description to say "company_name" instead of "account name"
 
 ---
 
-## BUG-003: `list_events` returns Internal Server Error
+## DOC-003: `list_streams_bulk` - `stream_id` vs `id`
 
-**Test:** EVT-001, EVT-003
-**Tool:** `list_events`
+**Test:** STR-006
 
-### Expected Response
+**Issue:** Requesting `fields: 'stream_id,description'` returns error because field is named `id`, not `stream_id`.
+
+**Fix:** Update documentation to clarify the field is named `id`
+
+---
+
+## DOC-004: `get_stream` - "current value" vs `value`
+
+**Test:** STR-007
+
+**Tool Description says:**
+> Get details of a specific data stream including **current value**, data type, units...
+
+**Actual API response:**
 ```json
 {
-  "count": 100,
-  "list": [...],
-  "cursor": "..."
+  "id": "...",
+  "value": "646107.82",
+  "type": "DOUBLE",
+  ...
 }
 ```
 
-### Actual Response
+**Fix:** Update description to say "value" instead of "current value"
+
+---
+
+# Functional Bugs
+
+These are actual bugs where the tool behavior is incorrect or broken.
+
+## FUNC-001: `list_events` - Python NameError (HIGH SEVERITY)
+
+**Test:** EVT-001, EVT-003
+
+**Error:**
 ```
 Internal error: Error calling tool 'list_events': name 'orderby' is not defined
 ```
 
-### Issue
-The `list_events` tool has a Python NameError - the variable `orderby` is referenced before being defined in the server code.
+**Impact:** Tool is completely non-functional.
 
-### Severity
-**HIGH** - This tool is completely non-functional.
-
-### Recommendation
-Fix the Python code in the MCP server to properly define the `orderby` variable before use.
+**Fix:** Fix Python code - define `orderby` variable before use.
 
 ---
 
-## BUG-004: `validate_query_syntax` incorrectly accepts `equals` operator
+## FUNC-002: `validate_query_syntax` - Accepts invalid `equals` operator
 
 **Test:** QS-017
-**Tool:** `validate_query_syntax`
 
-### Input
+**Input:**
 ```json
-{
-  "query": "type equals 'EX50'"
-}
+{"query": "type equals 'EX50'"}
 ```
 
-### Expected Response
-```json
-{
-  "valid": false,
-  "errors": ["Invalid operator 'equals'. Use '=' instead."]
-}
+**Validator Response:** ✅ Valid
+
+**Actual API Response:** 
+```
+Invalid input 'q', expected 'n/N' (line 1, pos 7):
+type equals 'EX50'
+      ^
 ```
 
-### Actual Response
-```json
-{
-  "valid": true,
-  "query": "type equals 'EX50'",
-  "errors": [],
-  "warnings": [],
-  "message": "✅ Query syntax appears valid"
-}
-```
+**Impact:** Users write queries that pass validation but fail at runtime.
 
-### Issue
-The `equals` operator is NOT supported by the DRM API - only `=` works. But `validate_query_syntax` incorrectly reports it as valid. This will cause users to write queries that will fail when executed.
-
-### DRM Query Syntax (per CLAUDE.md)
-- Use `=` for equality, NOT `equals`
-- Supported operators: `=`, `contains`, `startswith`, `>`, `<`
-
-### Recommendation
-Add validation to reject `equals` and suggest using `=` instead.
+**Fix:** Add validation to reject `equals` operator, suggest using `=` instead.
 
 ---
 
-## BUG-005: `find_device_id_by_name` returns CSV header only for no-match
+# Platform Issues
 
-**Test:** DEV-021
-**Tool:** `find_device_id_by_name`
+These affect DRM broadly, not just the MCP server.
 
-### Input
-```json
-{
-  "device_search": "zzzznonexistent"
-}
+## PLAT-001: Cached data returned without indication for disconnected devices
+
+**Test:** SCI-007
+
+**Issue:** When querying state for a disconnected device, DRM returns stale cached data (from 2019) without any indication that:
+1. The device is disconnected
+2. The data is cached/stale
+3. When the data was captured
+
+**Example Response:**
+```xml
+<system_time>14 February 2019, 14:12:18</system_time>
 ```
 
-### Expected Response
-One of:
-- Empty array: `[]`
-- Message: `"No devices found"`
-- Empty result with message: `{"count": 0, "list": []}`
+**Impact:** Users may act on stale data thinking it's current. Affects both MCP and DRM UI.
 
-### Actual Response
-```
-name,id
-```
-(CSV with header only, no data rows)
-
-### Issue
-When no devices match, the tool returns just the CSV header with no indication that the result is empty. This is ambiguous and harder to parse than a proper "no results" response.
-
-### Recommendation
-Return either:
-- An empty JSON array: `[]`
-- A JSON object: `{"count": 0, "list": [], "message": "No devices found matching 'zzzznonexistent'"}`
+**Fix:** Add indication when returning cached data (e.g., `"cached": true` flag or warning message).
 
 ---
 
-## BUG-006: `list_streams_bulk` doesn't support `stream_id` field
+## Test Status
 
-**Test:** STR-006
-**Tool:** `list_streams_bulk`
+After fixing these issues, the following tests should pass:
 
-### Input
-```json
-{
-  "fields": "stream_id,description"
-}
-```
-
-### Expected Response
-CSV with `stream_id` and `description` columns
-
-### Actual Response
-```
-Internal error: DRM API call GET /v1/streams/bulk failed with HTTP status code 400: 
-error_code,error_context,error_message,error_status
-,,"The specified field is not part of the default output: stream_id",400
-```
-
-### Issue
-The bulk API uses `id` as the field name, not `stream_id`. However, `stream_id` is a more descriptive name that should be supported (or documented as an alias).
-
-### Recommendation
-Either support `stream_id` as an alias for `id`, or clearly document that the field is named `id`.
-
----
-
-## BUG-007: `get_stream` returns `value` instead of `current_value`
-
-**Test:** STR-007
-**Tool:** `get_stream`
-
-### Expected Response
-```json
-{
-  "stream_id": "...",
-  "current_value": "646107.82",
-  "timestamp": "...",
-  ...
-}
-```
-
-### Actual Response
-```json
-{
-  "id": "00000000-00000000-00042DFF-FF057176/carrier/.../usage/data/transferred",
-  "value": "646107.82",
-  "type": "DOUBLE",
-  "timestamp": "2017-05-19T08:00:00.000Z",
-  ...
-}
-```
-
-### Issue
-- Field is named `id` instead of `stream_id`
-- Field is named `value` instead of `current_value`
-
-### Recommendation
-Rename fields to be more descriptive:
-- `id` → `stream_id`
-- `value` → `current_value`
-
----
-
-## Test Data Issue (Not an MCP Bug)
-
-### SCI-007: TEST_DISCONNECTED_DEVICE_ID is actually connected
-
-The test uses `TEST_DISCONNECTED_DEVICE_ID` from environment variables. If this device is actually connected, the test will incorrectly pass/fail.
-
-**Resolution:** Ensure test fixtures have a truly disconnected device ID, OR update test to verify device connection status first.
-
----
-
-## How to Use This Report
-
-1. **For MCP Server Developers:** Use this report to prioritize and fix bugs in order of severity
-2. **For Test Suite Maintainers:** Keep tests as-is to catch regressions when bugs are fixed
-3. **For Users:** Be aware of these issues when using the affected tools
+| Category | Tests |
+|----------|-------|
+| Documentation fixes | ACC-002, ACC-003, STR-006, STR-007 |
+| Functional fixes | EVT-001, EVT-003, QS-017 |
+| Platform fixes | SCI-007 |
