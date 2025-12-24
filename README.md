@@ -9,20 +9,30 @@ Automated test suite for the Digi Remote Manager (DRM) Model Context Protocol (M
 
 ## Configuration
 
-Set the following environment variables to connect to the MCP server:
+The test suite relies on environment variables for authentication and test targets.
 
-```bash
-export MCP_SERVER_URL="https://remotemanager.digi.com/mcp"
-export DRM_API_KEY_ID="your_api_key_id"
-export DRM_API_KEY_SECRET="your_api_key_secret"
-```
+1. Copy the example configuration:
+   ```bash
+   cp .env.example .env
+   ```
 
-You can also override test configuration defaults:
+2. Edit `.env` with your details:
 
-```bash
-export TEST_CONNECTED_DEVICE_ID="your_device_id"
-export TEST_KNOWN_GROUP="your_group"
-```
+   **Authentication** (Required)
+   - `MCP_SERVER_URL`: URL of the MCP server (default: `https://remotemanager.digi.com/mcp`)
+   - `DRM_API_KEY_ID`: Your DRM API Key ID
+   - `DRM_API_KEY_SECRET`: Your DRM API Key Secret
+
+   **Test Targets** (Required for relevant tests)
+   | Variable | Description |
+   |----------|-------------|
+   | `TEST_CONNECTED_DEVICE_ID` | UUID of a currently online device |
+   | `TEST_DISCONNECTED_DEVICE_ID` | UUID of a currently offline device |
+   | `TEST_DEVICE_NAME_SEARCH` | Partial name to search for (e.g. "ex50") |
+   | `TEST_KNOWN_GROUP` | A group that exists in your account |
+   | `TEST_KNOWN_DEVICE_TYPE` | A device type that exists (e.g. "Digi EX50") |
+   | `TEST_VALID_ALERT_ID` | numeric ID of an existing alert |
+   | `TEST_VALID_MONITOR_ID` | numeric ID of an existing monitor |
 
 ## Running Tests
 
